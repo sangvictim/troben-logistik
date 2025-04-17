@@ -1,18 +1,10 @@
-# Base image with PHP 8.4
+# Gunakan base image PHP
 FROM php:8.4-fpm
 
-# Install system dependencies
+# Install sistem dependencies
 RUN apt-get update && apt-get install -y \
-  git \
-  curl \
-  libpng-dev \
-  libonig-dev \
-  libxml2-dev \
-  sqlite3 \
-  libsqlite3-dev \
-  unzip \
-  nodejs \
-  npm \
+  curl unzip zip libpng-dev libonig-dev libxml2-dev sqlite3 libsqlite3-dev \
+  nodejs npm \
   && docker-php-ext-install pdo pdo_sqlite
 
 # Install Composer
@@ -21,26 +13,28 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Set working directory
 WORKDIR /var/www
 
-# Copy composer files
+# Copy composer.json & lock dulu
 COPY composer.json composer.lock ./
 
-# Install PHP dependencies for production only
-RUN composer install --no-dev
-RUN php artisan optimize:clear
-RUN php artisan config:clear
-RUN php artisan cache:clear
+# Salin file .env jika sudah ada
+COPY .env .env
 
-# Copy rest of the app
+# Install PHP dependencies
+RUN composer install --no-dev --no-scripts --prefer-dist
+
+# Copy semua file aplikasi
 COPY . .
 
-# Install JS dependencies and build frontend
+# Jalankan script artisan secara manual setelah semua file tersedia
+RUN composer run-script post-autoload-dump || true
+RUN php artisan config:clear && php artisan cache:clear && php artisan route:clear && php artisan view:clear
+
+# Build frontend
 RUN npm install && npm run build
 
-# Set permissions
-RUN chmod -R 777 storage && chown -R www-data:www-data storage \
-  && chown -R www-data:www-data /var/www \
-  && chmod -R 755 /var/www
-# Expose port (if using Laravel with a server like php-fpm + nginx)
-EXPOSE 9000
+# Set permission
+RUN chmod -R 777 storage bootstrap/cache \
+  && chown -R www-data:www-data /var/www
 
+EXPOSE 9000
 CMD ["php-fpm"]
