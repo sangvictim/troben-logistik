@@ -25,17 +25,16 @@ WORKDIR /var/www
 COPY composer.json composer.lock ./
 
 # Install PHP dependencies for production only
-# RUN composer install --no-dev
+RUN composer install --no-dev
+RUN php artisan optimize:clear
+RUN php artisan config:clear
+RUN php artisan cache:clear
 
 # Copy rest of the app
 COPY . .
 
 # Install JS dependencies and build frontend
 RUN npm install && npm run build
-
-RUN php artisan optimize:clear
-RUN php artisan config:clear
-RUN php artisan cache:clear
 
 # Set permissions
 RUN chmod -R 777 storage && chown -R www-data:www-data storage \
