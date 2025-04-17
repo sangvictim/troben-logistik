@@ -1,0 +1,45 @@
+version: "3.8"
+
+services:
+  # PHP-FPM + Laravel app
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: logistik:0.0.1
+    container_name: app-logistik
+    restart: unless-stopped
+    expose:
+      - 9000
+    tty: true
+    working_dir: /var/www/troben-logistik
+    environment:
+      SERVICE_NAME: app
+      SERVICE_TAGS: dev
+    volumes:
+      - ./:/var/www/troben-logistik
+      - ./database:/var/www/troben-logistik/database
+    entrypoint: [ "/var/www/troben-logistik/entrypoint.sh" ]
+    networks:
+      - bridge
+
+  # NGINX web server
+  webserver:
+    image: nginx:latest
+    container_name: webserver-logistik
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "8000:80"
+      - "443:443"
+    depends_on:
+      - app
+    volumes:
+      - ./:/var/www/troben-logistik
+      - ./nginx/conf.d/:/etc/nginx/conf.d/
+    networks:
+      - bridge
+
+networks:
+  bridge:
+    driver: bridge
