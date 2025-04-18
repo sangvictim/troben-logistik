@@ -17,7 +17,7 @@ WORKDIR /var/www
 COPY composer.json composer.lock ./
 
 # Salin file .env jika sudah ada
-COPY .env .env
+COPY .env.example .env
 
 # Install PHP dependencies
 RUN composer install --no-dev --no-scripts --prefer-dist
@@ -28,6 +28,12 @@ COPY . .
 # Jalankan script artisan secara manual setelah semua file tersedia
 RUN composer run-script post-autoload-dump || true
 RUN php artisan config:clear && php artisan cache:clear && php artisan route:clear && php artisan view:clear
+
+# Jalankan composer fresh untuk migrate & seed data
+RUN composer fresh
+
+# Generate key
+RUN php artisan key:generate
 
 # Build frontend
 RUN npm install && npm run build

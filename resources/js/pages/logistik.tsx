@@ -57,12 +57,13 @@ export default function Logistik() {
         setQuery(item.kecamatan);
         setShowSuggestions(false);
         setSelectedLocation(item)
-        localStorage.setItem("selectedQuery", item.kecamatan);
+        localStorage.setItem("selectedQuery", JSON.stringify(item));
     };
 
     useEffect(() => {
-        const last = localStorage.getItem("selectedQuery");
-        if (last) setQuery(last);
+        const last: any = localStorage.getItem("selectedQuery");
+        setSelectedLocation(JSON.parse(last));
+        if (last) setQuery(JSON.parse(last).kecamatan);
     }, []);
 
     useEffect(() => {
